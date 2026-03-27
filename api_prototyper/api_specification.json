@@ -1,0 +1,489 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AudioBooks API (MVP)",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for the AudioBooks MVP.\nCovers 4 endpoints: catalog listing, audiobook details, Quick Listen, and similar titles.\n"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Flask backend"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Catalog"
+    },
+    {
+      "name": "QuickListen"
+    },
+    {
+      "name": "Similar"
+    }
+  ],
+  "paths": {
+    "/audiobooks": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "summary": "List and search audiobooks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "description": "Search term (matches title, author, topic)",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "description": "Filter by language (ISO 639-1 code)",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "durationMinSeconds",
+            "description": "Minimum duration in seconds",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "durationMaxSeconds",
+            "description": "Maximum duration in seconds",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "author",
+            "description": "Filter by author or narrator",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "description": "Pagination offset",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of audiobooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiobookListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/audiobooks/{audiobookId}": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "summary": "Get audiobook details",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AudiobookId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audiobook details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiobookDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/audiobooks/{audiobookId}/quick-listen": {
+      "get": {
+        "tags": [
+          "QuickListen"
+        ],
+        "summary": "Get Quick Listen summary and estimated time",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AudiobookId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quick Listen data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuickListenResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/audiobooks/{audiobookId}/similar": {
+      "get": {
+        "tags": [
+          "Similar"
+        ],
+        "summary": "Get similar audiobooks",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AudiobookId"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Number of similar titles to return",
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Similar audiobooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "AudiobookId": {
+        "in": "path",
+        "name": "audiobookId",
+        "required": true,
+        "description": "Unique audiobook identifier",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "responses": {
+      "BadRequestError": {
+        "description": "Invalid request parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": "BAD_REQUEST",
+              "message": "Invalid query parameter"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": "NOT_FOUND",
+              "message": "Audiobook not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Unexpected server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": "INTERNAL_ERROR",
+              "message": "Unexpected error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "AudiobookSummary": {
+        "type": "object",
+        "description": "Short audiobook info shown in catalog lists",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "language": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "durationSeconds",
+          "language"
+        ]
+      },
+      "AudiobookListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudiobookSummary"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "AudiobookDetail": {
+        "type": "object",
+        "description": "Full audiobook metadata for the details page",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "nullable": true
+          },
+          "narrator": {
+            "type": "string",
+            "nullable": true
+          },
+          "narratorType": {
+            "type": "string",
+            "enum": [
+              "human",
+              "ai"
+            ],
+            "nullable": true
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "language": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "synopsis": {
+            "type": "string",
+            "nullable": true
+          },
+          "audioUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL to the audio file; null if not available"
+          },
+          "isPlayable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "durationSeconds",
+          "language",
+          "isPlayable"
+        ]
+      },
+      "QuickListenResponse": {
+        "type": "object",
+        "properties": {
+          "summaryText": {
+            "type": "string",
+            "description": "Text summary of the audiobook"
+          },
+          "summaryAudioUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL to audio summary, if available"
+          },
+          "estimatedListenTimeSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Estimated time to consume the summary"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Explains fallback logic used"
+          }
+        },
+        "required": [
+          "summaryText",
+          "estimatedListenTimeSeconds"
+        ]
+      },
+      "SimilarAudiobook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "language": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Short explanation of why this title is similar"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "durationSeconds",
+          "language",
+          "reason"
+        ]
+      },
+      "SimilarListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimilarAudiobook"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      }
+    }
+  }
+}
